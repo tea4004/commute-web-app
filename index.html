@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f0e6" />
+    <title>Which Way</title>
+    <style>
+      :root {
+        --paper: #f4f0e6;
+        --sheet: #faf7f0;
+        --ink: #243056;
+        --soft: #5d6578;
+        --line: #ddd4c4;
+        --sans: "Helvetica Neue", Helvetica, "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { margin: 0; min-height: 100%; }
+
+      body {
+        font-family: var(--sans);
+        color: var(--ink);
+        background: #e6e0d2;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .sheet {
+        width: min(100%, 440px);
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: calc(16px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom));
+        background: var(--paper);
+        position: relative;
+      }
+
+      .map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 148px;
+        background: url("map.png") center 42% / cover no-repeat;
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 100%);
+        pointer-events: none;
+      }
+
+      h1, h2, .time, .mode {
+        font-family: var(--sans);
+        font-weight: 700;
+        letter-spacing: -0.045em;
+      }
+
+      h1 {
+        margin: 46px 0 0;
+        font-size: 40px;
+        line-height: 0.92;
+        text-transform: uppercase;
+      }
+
+      .pitch {
+        margin: 16px 0 0;
+        font-family: var(--sans);
+        font-size: 20px;
+        font-weight: 500;
+        letter-spacing: -0.015em;
+        line-height: 1.35;
+        color: var(--ink);
+      }
+
+      form, .block { margin-top: 22px; }
+
+      label.field, legend, .label {
+        display: block;
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: var(--soft);
+      }
+
+      label.field {
+        margin: 0 0 22px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        display: block;
+        margin: 14px 0 0;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--sheet);
+        color: var(--ink);
+        font: 17px/1.3 var(--sans);
+      }
+
+      fieldset {
+        margin: 0 0 14px;
+        padding: 0;
+        border: 0;
+      }
+
+      .choice { display: block; margin: 0 0 6px; }
+
+      .choice input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .choice span {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: transparent;
+        font-size: 17px;
+        font-weight: 500;
+      }
+
+      .choice.is-down span { background: rgba(36, 48, 86, 0.08); }
+
+      .choice input:checked + span {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+
+      .choice input:focus-visible + span,
+      .check input:focus-visible + span {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
+        font-size: 17px;
+        line-height: 1.3;
+      }
+
+      .check input {
+        width: 22px;
+        height: 22px;
+        margin: 0;
+        accent-color: var(--ink);
+      }
+
+      button, .text-btn {
+        font-family: var(--sans);
+        cursor: pointer;
+      }
+
+      .go, .why-btn, .close {
+        width: 100%;
+        min-height: 52px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 17px;
+        font-weight: 600;
+      }
+
+      .go, .why-btn, .close { touch-action: manipulation; }
+
+      .trip {
+        margin: 78px 0 0;
+        font-size: 15px;
+        color: var(--soft);
+        line-height: 1.35;
+      }
+
+      .winner {
+        margin: 18px 0 0;
+        padding: 22px 20px 20px;
+        border: 1.5px solid var(--ink);
+        border-radius: 18px;
+        background: var(--sheet);
+      }
+
+      .emoji { margin: 0; font-size: 28px; line-height: 1; }
+
+      .mode {
+        margin: 10px 0 0;
+        font-size: 36px;
+        line-height: 1;
+      }
+
+      .time {
+        margin: 8px 0 0;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      .reason, .meta, .note, footer {
+        margin: 10px 0 0;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+
+      .reason { margin-top: 12px; }
+
+      .others {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .other {
+        padding: 14px 16px 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: transparent;
+      }
+
+      .other-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+
+      .other h2 {
+        margin: 0;
+        font-family: var(--sans);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+
+      .other .time { margin: 0; font-size: 22px; }
+
+      .meta { margin: 6px 0 0; font-size: 15px; color: var(--soft); }
+
+      .label { margin: 26px 0 10px; }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .badge {
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .badge b { font-weight: 600; }
+
+      .why-btn { margin-top: 22px; }
+
+      .text-btn {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+        min-height: 44px;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font-size: 17px;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .note { min-height: 1.35em; color: var(--soft); font-size: 15px; }
+
+      footer {
+        margin-top: 28px;
+        color: var(--soft);
+        font-size: 13px;
+      }
+
+      .scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        background: rgba(8, 12, 20, 0.45);
+        opacity: 0;
+      }
+
+      .scrim[hidden] { display: none; }
+
+      .why-sheet {
+        position: fixed;
+        left: 50%;
+        bottom: 0;
+        z-index: 3;
+        width: min(100%, 440px);
+        max-height: min(78dvh, 640px);
+        overflow: auto;
+        padding: 8px 22px calc(16px + env(safe-area-inset-bottom));
+        border-radius: 18px 18px 0 0;
+        background: #f7f3ea;
+        color: var(--ink);
+        box-shadow: 0 -12px 40px rgba(8, 12, 24, 0.28);
+        transform: translateX(-50%) translateY(110%);
+        will-change: transform;
+      }
+
+      .why-sheet[hidden] { display: none; }
+
+      .grab {
+        width: 36px;
+        height: 5px;
+        margin: 6px auto 14px;
+        border-radius: 99px;
+        background: rgba(36, 48, 86, 0.28);
+        touch-action: none;
+      }
+
+      .why-sheet h2 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .why-sheet p { margin: 12px 0 0; font-size: 17px; line-height: 1.4; }
+
+      .why-sheet .close { margin-top: 18px; }
+
+      @media (max-width: 440px) {
+        body { background: var(--paper); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <div class="map" aria-hidden="true"></div>
+
+      <section id="input-screen">
+        <h1>Which way today?</h1>
+        <p class="pitch">Today, we stop guessing.</p>
+
+        <form id="trip-form">
+          <label class="field" for="from">From
+            <input id="from" name="from" type="text" value="Home, Trešnjevka" autocomplete="off" />
+          </label>
+          <label class="field" for="to">To
+            <input id="to" name="to" type="text" value="Faculty, Ivana Lučića 3" autocomplete="off" />
+          </label>
+
+          <fieldset>
+            <legend>Scenario</legend>
+            <label class="choice"><input type="radio" name="scenario" value="sunny" checked /><span>Sunny morning</span></label>
+            <label class="choice"><input type="radio" name="scenario" value="rainy" /><span>Rainy morning</span></label>
+            <label class="choice"><input type="radio" name="scenario" value="delay" /><span>Tram delay</span></label>
+          </fieldset>
+
+          <fieldset>
+            <legend>My rules</legend>
+            <label class="check"><input type="checkbox" name="neverBike" /><span>I never bike in the rain</span></label>
+            <label class="check"><input type="checkbox" name="cheap" /><span>I want the cheapest way</span></label>
+            <label class="check"><input type="checkbox" name="crowds" /><span>I avoid crowded trams</span></label>
+          </fieldset>
+
+          <button class="go" type="submit">Find my best way</button>
+        </form>
+        <footer>Demo with example data.</footer>
+      </section>
+
+      <section id="result-screen" hidden>
+        <p class="trip" id="trip-line"></p>
+        <article class="winner" id="winner"></article>
+        <div class="others" id="others"></div>
+
+        <p class="label">Data used</p>
+        <div class="badges" id="badges"></div>
+
+        <button class="why-btn" type="button" id="why-open">Why this answer?</button>
+
+        <fieldset class="block" id="result-rules">
+          <legend>Scenario</legend>
+          <label class="choice"><input type="radio" name="scenario-2" value="sunny" /><span>Sunny morning</span></label>
+          <label class="choice"><input type="radio" name="scenario-2" value="rainy" /><span>Rainy morning</span></label>
+          <label class="choice"><input type="radio" name="scenario-2" value="delay" /><span>Tram delay</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>My rules</legend>
+          <label class="check"><input type="checkbox" id="r-never" /><span>I never bike in the rain</span></label>
+          <label class="check"><input type="checkbox" id="r-cheap" /><span>I want the cheapest way</span></label>
+          <label class="check"><input type="checkbox" id="r-crowds" /><span>I avoid crowded trams</span></label>
+        </fieldset>
+        <p class="note" id="rule-note"></p>
+
+        <button class="text-btn" type="button" id="back">Edit trip</button>
+        <footer>Demo with example data.</footer>
+      </section>
+    </main>
+
+    <div class="scrim" id="scrim" hidden></div>
+    <section class="why-sheet" id="why" hidden aria-labelledby="why-title">
+      <div class="grab" id="grab" aria-hidden="true"></div>
+      <h2 id="why-title">Why this answer?</h2>
+      <div id="why-body"></div>
+      <button class="close" type="button" id="why-close">Close</button>
+    </section>
+
+    <script>
+      const MODES = [
+        { id: "bike", name: "bike", take: "Take the bike.", emoji: "🚲", time: 18, cost: 0, comfort: 5 },
+        { id: "walk", name: "walk", take: "Walk.", emoji: "🚶", time: 32, cost: 0, comfort: 4 },
+        { id: "tram", name: "tram", take: "Take the tram.", emoji: "🚊", time: 25, cost: 0.53, comfort: 3 },
+        { id: "car", name: "car", take: "Take the car.", emoji: "🚗", time: 16, cost: 0.8, comfort: 3 },
+      ];
+
+      const NAMES = { bike: "Bike", walk: "Walk", tram: "Tram", car: "Car" };
+
+      const state = {
+        from: "Home, Trešnjevka",
+        to: "Faculty, Ivana Lučića 3",
+        scenario: "sunny",
+        neverBike: false,
+        cheap: false,
+        crowds: false,
+      };
+
+      const inputScreen = document.getElementById("input-screen");
+      const resultScreen = document.getElementById("result-screen");
+      const whySheet = document.getElementById("why");
+      const scrim = document.getElementById("scrim");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      function situation(scenario) {
+        if (scenario === "rainy") {
+          return { rain: true, delay: 0, weather: "Rain, 12 °C", traffic: "Slow", delayText: "Line 6: on time" };
+        }
+        if (scenario === "delay") {
+          return { rain: false, delay: 8, weather: "Clear, 16 °C", traffic: "Light", delayText: "Line 6: 8 min late" };
+        }
+        return { rain: false, delay: 0, weather: "Clear, 18 °C", traffic: "Light", delayText: "Line 6: on time" };
+      }
+
+      function rules() {
+        return { neverBike: state.neverBike, cheap: state.cheap, crowds: state.crowds };
+      }
+
+      function prepare(mode, sit, rule) {
+        let time = mode.time;
+        let cost = mode.cost;
+        let comfort = mode.comfort;
+
+        if (mode.id === "car") {
+          time += 11;
+          cost += 3.2;
+          if (sit.rain) time += 4;
+        }
+        if (mode.id === "tram") {
+          time += sit.delay;
+          if (sit.delay > 0 && sit.rain) {
+            time += 6;
+            comfort = 1;
+          } else if (sit.delay > 0) {
+            comfort = 2;
+          } else if (sit.rain) {
+            comfort = 4;
+          }
+        }
+        if (mode.id === "bike" && sit.rain) {
+          time += 20;
+          comfort = 1;
+        }
+        if (mode.id === "walk" && sit.rain) {
+          time += 10;
+          comfort = 2;
+        }
+        if (rule.neverBike && sit.rain && mode.id === "bike") time += 25;
+        if (rule.crowds && mode.id === "tram") {
+          comfort = 1;
+          time += 6;
+        }
+
+        const timeW = rule.cheap ? 0.35 : 1;
+        const costW = rule.cheap ? 20 : 3.5;
+        const comfortW = rule.cheap ? 0.5 : 11;
+        const score = time * timeW + cost * costW + (5 - comfort) * comfortW;
+
+        return {
+          id: mode.id,
+          name: mode.name,
+          take: mode.take,
+          emoji: mode.emoji,
+          time: Math.round(time),
+          cost: Math.round(cost * 100) / 100,
+          comfort,
+          score,
+        };
+      }
+
+      function rank(sit, rule) {
+        return MODES.map((mode) => prepare(mode, sit, rule)).sort((a, b) => a.score - b.score);
+      }
+
+      function euro(amount) {
+        return amount === 0 ? "€0" : "€" + amount.toFixed(2);
+      }
+
+      function reasonFor(winner, sit, rule) {
+        if (rule.cheap && winner.id === "bike" && sit.rain) {
+          return "You asked for the cheapest. The bike costs nothing.";
+        }
+        if (rule.cheap && winner.id === "walk") {
+          return "You want the cheapest, and you skip the bike in the rain.";
+        }
+        if (rule.crowds && winner.id === "car") {
+          return "The tram is crowded. The car is next, parking included.";
+        }
+        if (rule.neverBike && sit.rain && winner.id === "tram") {
+          return "It is raining, and you never bike in the rain.";
+        }
+        if (winner.id === "bike" && sit.delay > 0) return "Dry weather, and the tram is late.";
+        if (winner.id === "bike") return "Dry weather, and the bike is the fastest.";
+        if (winner.id === "tram") return "It is raining. The tram keeps you dry.";
+        if (winner.id === "car") return "The tram is late in the rain. Parking is already included.";
+        return "This has the best balance of time, cost, and comfort.";
+      }
+
+      function ruleNote(sit, ranked) {
+        const winner = ranked[0].id;
+        if (state.neverBike && !sit.rain && winner === "bike") {
+          return "It is dry, so the bike stays.";
+        }
+        if (state.neverBike && sit.rain) {
+          return "The bike is out. You never ride in the rain.";
+        }
+        if (state.cheap && winner === "bike") return "Cost counted more than comfort.";
+        if (state.crowds && winner !== "tram") return "A crowded tram was pushed down.";
+        return "";
+      }
+
+      function render() {
+        const sit = situation(state.scenario);
+        const rule = rules();
+        const ranked = rank(sit, rule);
+        const winner = ranked[0];
+
+        document.getElementById("trip-line").textContent = state.from + " to " + state.to;
+
+        const card = document.getElementById("winner");
+        card.replaceChildren();
+        const emoji = document.createElement("p");
+        emoji.className = "emoji";
+        emoji.textContent = winner.emoji;
+        const mode = document.createElement("h2");
+        mode.className = "mode";
+        mode.textContent = winner.take;
+        const time = document.createElement("p");
+        time.className = "time";
+        time.textContent = winner.time + " min";
+        const why = document.createElement("p");
+        why.className = "reason";
+        why.textContent = reasonFor(winner, sit, rule);
+        card.append(emoji, mode, time, why);
+
+        const others = document.getElementById("others");
+        others.replaceChildren();
+        for (const modeInfo of ranked.slice(1)) {
+          const item = document.createElement("article");
+          item.className = "other";
+          const top = document.createElement("div");
+          top.className = "other-top";
+          const title = document.createElement("h2");
+          title.textContent = modeInfo.emoji + " " + NAMES[modeInfo.id];
+          const mins = document.createElement("p");
+          mins.className = "time";
+          mins.textContent = modeInfo.time + " min";
+          top.append(title, mins);
+          const meta = document.createElement("p");
+          meta.className = "meta";
+          meta.textContent = euro(modeInfo.cost) + " · Comfort " + modeInfo.comfort + "/5";
+          item.append(top, meta);
+          others.append(item);
+        }
+
+        const badges = document.getElementById("badges");
+        badges.replaceChildren();
+        const facts = [
+          ["Weather", sit.weather],
+          ["Live traffic", sit.traffic],
+          ["Tram delays", sit.delayText],
+          ["Parking", "11 min, €3.20"],
+        ];
+        for (const [name, value] of facts) {
+          const badge = document.createElement("p");
+          badge.className = "badge";
+          const strong = document.createElement("b");
+          strong.textContent = name + " ";
+          badge.append(strong, document.createTextNode(value));
+          badges.append(badge);
+        }
+
+        document.getElementById("rule-note").textContent = ruleNote(sit, ranked);
+        whyDialog.dataset.ready = "1";
+      }
+
+      function fillWhy() {
+        const sit = situation(state.scenario);
+        const rule = rules();
+        const ranked = rank(sit, rule);
+        const body = document.getElementById("why-body");
+        body.replaceChildren();
+
+        const lead = document.createElement("p");
+        lead.textContent = "Each way gets a score from time, cost, and comfort. Lower is better. The lowest score wins.";
+        body.append(lead);
+
+        for (const modeInfo of ranked) {
+          const line = document.createElement("p");
+          line.textContent = NAMES[modeInfo.id] + ": " + modeInfo.time + " min, " + euro(modeInfo.cost) + ", comfort " + modeInfo.comfort + "/5.";
+          body.append(line);
+        }
+
+        const parking = document.createElement("p");
+        parking.textContent = "The car includes 11 minutes and €3.20 to park in the centre.";
+        body.append(parking);
+
+        const bits = [];
+        if (rule.cheap) bits.push("You asked for the cheapest, so cost counts more and comfort counts less.");
+        if (rule.crowds) bits.push("A crowded tram loses comfort and a few minutes.");
+        if (rule.neverBike) bits.push("In the rain, the bike takes a heavy penalty.");
+        if (bits.length) {
+          const rulesLine = document.createElement("p");
+          rulesLine.textContent = bits.join(" ");
+          body.append(rulesLine);
+        }
+
+        const alt = rank({ rain: true, delay: 8, weather: "", traffic: "", delayText: "" }, rule)[0];
+        const branch = document.createElement("p");
+        branch.textContent = "If it is raining and line 6 is 8 minutes late, " + alt.name + " wins at " + alt.time + " min.";
+        body.append(branch);
+      }
+
+      function syncResultControls() {
+        const picked = document.querySelector('input[name="scenario-2"][value="' + state.scenario + '"]');
+        if (picked) picked.checked = true;
+        document.getElementById("r-never").checked = state.neverBike;
+        document.getElementById("r-cheap").checked = state.cheap;
+        document.getElementById("r-crowds").checked = state.crowds;
+      }
+
+      function showResult() {
+        inputScreen.hidden = true;
+        resultScreen.hidden = false;
+        syncResultControls();
+        render();
+        window.scrollTo(0, 0);
+        if (reduceMotion) return;
+        resultScreen.style.opacity = "0";
+        spring({
+          from: 0,
+          to: 1,
+          velocity: 0,
+          damping: 1,
+          response: 0.4,
+          set: (value) => {
+            resultScreen.style.opacity = String(value);
+            resultScreen.style.transform = "translateY(" + (1 - value) * 12 + "px)";
+          },
+        });
+      }
+
+      document.getElementById("trip-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(event.target);
+        state.from = String(data.get("from") || "Home").trim();
+        state.to = String(data.get("to") || "Faculty").trim();
+        state.scenario = String(data.get("scenario") || "sunny");
+        state.neverBike = data.get("neverBike") === "on";
+        state.cheap = data.get("cheap") === "on";
+        state.crowds = data.get("crowds") === "on";
+        showResult();
+      });
+
+      document.getElementById("result-screen").addEventListener("change", (event) => {
+        const target = event.target;
+        if (target.name === "scenario-2") state.scenario = target.value;
+        if (target.id === "r-never") state.neverBike = target.checked;
+        if (target.id === "r-cheap") state.cheap = target.checked;
+        if (target.id === "r-crowds") state.crowds = target.checked;
+        const inputScenario = document.querySelector('input[name="scenario"][value="' + state.scenario + '"]');
+        if (inputScenario) inputScenario.checked = true;
+        document.querySelector('input[name="neverBike"]').checked = state.neverBike;
+        document.querySelector('input[name="cheap"]').checked = state.cheap;
+        document.querySelector('input[name="crowds"]').checked = state.crowds;
+        render();
+      });
+
+      document.getElementById("back").addEventListener("click", () => {
+        resultScreen.hidden = true;
+        inputScreen.hidden = false;
+        document.getElementById("from").value = state.from;
+        document.getElementById("to").value = state.to;
+        window.scrollTo(0, 0);
+      });
+
+      let sheetY = 0;
+      let sheetCancel = function () {};
+      let sheetShown = false;
+
+      function spring(config) {
+        if (reduceMotion) {
+          config.set(config.to);
+          if (config.onRest) config.onRest();
+          return function () {};
+        }
+        const stiffness = Math.pow((2 * Math.PI) / config.response, 2);
+        const damp = config.damping * 2 * Math.sqrt(stiffness);
+        let value = config.from;
+        let velocity = config.velocity || 0;
+        let last = performance.now();
+        let frame = 0;
+        function tick(now) {
+          const dt = Math.min(0.032, (now - last) / 1000);
+          last = now;
+          velocity += (-stiffness * (value - config.to) - damp * velocity) * dt;
+          value += velocity * dt;
+          config.set(value);
+          if (Math.abs(value - config.to) < 0.5 && Math.abs(velocity) < 12) {
+            config.set(config.to);
+            if (config.onRest) config.onRest();
+            return;
+          }
+          frame = requestAnimationFrame(tick);
+        }
+        frame = requestAnimationFrame(tick);
+        return function () {
+          cancelAnimationFrame(frame);
+        };
+      }
+
+      function placeSheet(y) {
+        const height = whySheet.offsetHeight || 1;
+        sheetY = y;
+        whySheet.style.transform = "translateX(-50%) translateY(" + y + "px)";
+        scrim.style.opacity = String(Math.max(0, Math.min(1, 1 - y / height)));
+      }
+
+      function hideSheet() {
+        sheetShown = false;
+        whySheet.hidden = true;
+        scrim.hidden = true;
+        whySheet.style.transform = "translateX(-50%) translateY(110%)";
+        scrim.style.opacity = "0";
+      }
+
+      function settleSheet(to, velocity) {
+        const height = whySheet.offsetHeight || 1;
+        const carried = Math.abs(velocity) > 700;
+        sheetCancel();
+        sheetCancel = spring({
+          from: sheetY,
+          to: to,
+          velocity: velocity,
+          damping: carried ? 0.8 : 1,
+          response: 0.3,
+          set: placeSheet,
+          onRest: function () {
+            if (to >= height - 1) hideSheet();
+            else sheetShown = true;
+          },
+        });
+      }
+
+      function openSheet() {
+        fillWhy();
+        whySheet.hidden = false;
+        scrim.hidden = false;
+        const height = whySheet.offsetHeight || 320;
+        if (reduceMotion) {
+          placeSheet(0);
+          scrim.style.opacity = "1";
+          sheetShown = true;
+          return;
+        }
+        const from = sheetShown ? sheetY : height;
+        placeSheet(from);
+        settleSheet(0, 0);
+      }
+
+      document.getElementById("why-open").addEventListener("pointerup", openSheet);
+      document.getElementById("why-close").addEventListener("click", function () {
+        if (reduceMotion) {
+          hideSheet();
+          return;
+        }
+        settleSheet(whySheet.offsetHeight, 0);
+      });
+      scrim.addEventListener("pointerdown", function () {
+        if (reduceMotion) {
+          hideSheet();
+          return;
+        }
+        settleSheet(whySheet.offsetHeight, 0);
+      });
+
+      const grab = document.getElementById("grab");
+      let drag = null;
+
+      const dragTargets = [grab, document.getElementById("why-title")];
+
+      function startDrag(event) {
+        if (event.button !== undefined && event.button !== 0) return;
+        sheetCancel();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag = {
+          startY: event.clientY,
+          origin: sheetY,
+          moved: false,
+          samples: [{ y: event.clientY, t: performance.now() }],
+        };
+      }
+
+      function moveDrag(event) {
+        if (!drag) return;
+        const dy = event.clientY - drag.startY;
+        if (!drag.moved && Math.abs(dy) < 10) return;
+        drag.moved = true;
+        let next = drag.origin + dy;
+        if (next < 0) next *= 0.28;
+        const height = whySheet.offsetHeight;
+        if (next > height) next = height + (next - height) * 0.28;
+        placeSheet(next);
+        drag.samples.push({ y: event.clientY, t: performance.now() });
+        if (drag.samples.length > 5) drag.samples.shift();
+      }
+
+      function endDrag() {
+        if (!drag) return;
+        const samples = drag.samples;
+        drag = null;
+        let velocity = 0;
+        if (samples.length >= 2) {
+          const first = samples[0];
+          const last = samples[samples.length - 1];
+          const dt = (last.t - first.t) / 1000;
+          if (dt > 0) velocity = (last.y - first.y) / dt;
+        }
+        const height = whySheet.offsetHeight;
+        const projected = sheetY + velocity * 0.15;
+        settleSheet(projected > height * 0.35 ? height : 0, velocity);
+      }
+
+      dragTargets.forEach(function (target) {
+        target.addEventListener("pointerdown", startDrag);
+        target.addEventListener("pointermove", moveDrag);
+        target.addEventListener("pointerup", endDrag);
+        target.addEventListener("pointercancel", endDrag);
+      });
+
+      function bindPress(el) {
+        let cancel = function () {};
+        let scale = 1;
+        el.addEventListener("pointerdown", function (event) {
+          if (event.button !== undefined && event.button !== 0) return;
+          if (reduceMotion) {
+            el.style.opacity = "0.72";
+            return;
+          }
+          cancel();
+          cancel = spring({
+            from: scale,
+            to: 0.97,
+            velocity: 0,
+            damping: 1,
+            response: 0.18,
+            set: function (value) {
+              scale = value;
+              el.style.transform = "scale(" + value + ")";
+            },
+          });
+        });
+        function release() {
+          if (reduceMotion) {
+            el.style.opacity = "";
+            return;
+          }
+          cancel();
+          cancel = spring({
+            from: scale,
+            to: 1,
+            velocity: 0,
+            damping: 1,
+            response: 0.28,
+            set: function (value) {
+              scale = value;
+              el.style.transform = "scale(" + value + ")";
+            },
+          });
+        }
+        el.addEventListener("pointerup", release);
+        el.addEventListener("pointercancel", release);
+      }
+
+      document.querySelectorAll(".go, .why-btn, .close").forEach(bindPress);
+      document.querySelectorAll(".choice").forEach(function (label) {
+        label.addEventListener("pointerdown", function () { label.classList.add("is-down"); });
+        label.addEventListener("pointerup", function () { label.classList.remove("is-down"); });
+        label.addEventListener("pointerleave", function () { label.classList.remove("is-down"); });
+        label.addEventListener("pointercancel", function () { label.classList.remove("is-down"); });
+      });
+    </script>
+  </body>
+</html>
